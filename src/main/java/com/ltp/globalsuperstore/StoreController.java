@@ -1,16 +1,13 @@
 package com.ltp.globalsuperstore;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.text.ParseException;
-
-
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller  // can't name a clas name like controller( annotaiton)
 public class StoreController {
@@ -18,41 +15,55 @@ public class StoreController {
     private List<Item> items = new ArrayList<Item>();
 
     @GetMapping("/")
-    public String getForm( Model model) throws ParseException {
+    public String getForm( Model model, @RequestParam(required=false) String id) {
 
-        Item testItem = new Item();
-        
-        // Set values for the test item
-        testItem.setCategory("Furniture");
-        testItem.setName("lol");
-        testItem.setPrice(699.99);
-        testItem.setDiscount(10.0); // 10% discount
+        Item item;
 
+        // check if item already exist;
+         if ( checkItem(id) == -1) {
+            item = new Item();
+         } else {
+            item = items.get(checkItem(id));
+         }
 
-        long timestamp = 1627992000000L; // Represents August 3, 2021, 00:00:00 GMT
-        Date date = new Date(timestamp);
-
-        testItem.setDate(date);
-        
+         // add the item data to the model;
         model.addAttribute("categories",Constants.CATEGORIES);
-        model.addAttribute("item",testItem);
+        model.addAttribute("item",item);
 
         return "form";
     }
 
 
     @PostMapping("/submitItem")
-    public String handleSubmit(Item item) {
+    public String handleSubmit(Item item) {     
 
-        System.out.println(item.getCategory());
-        System.out.println(item.getName());
 
+        if( checkItem(item.getId()) == -1) {
+            items.add(item);
+        }else {
+          //  items.add(checkItem(item.getId()), item);
+            items.set(checkItem(item.getId()), item);
+        }
+        
         return "redirect:/inventory";
     }
 
     @GetMapping("/inventory")
     public String getInventory( Model model) {
 
+        model.addAttribute("items", items);
         return "inventory";
+    }
+
+
+    public Integer checkItem(String id) {
+
+        for (int i = 0; i < items.size(); i++) {
+            if ( items.get(i).getId().equals(id)) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }
